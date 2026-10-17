@@ -1,2 +1,180 @@
-/* Reclaim: global stylesheet. Tailwind v4 entry; A3 adds theme tokens (light/dark) here. */
+/* Reclaim: global stylesheet. Tailwind v4 entry, design tokens (light/dark via [data-theme]),
+   the @theme mapping to utilities, base typography and reduced-motion handling. */
+@import "@fontsource-variable/inter";
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------- Tokens: light (default) ---------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --surface-3: #e9ecf1;
+  --border: #e5e7eb;
+  --border-strong: #d3d7de;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #8590a2;
+  --accent: #10b981;
+  --accent-strong: #059669;
+  --accent-soft: #10b9811f;
+  --accent-contrast: #ffffff;
+  --danger: #ef4444;
+  --danger-soft: #ef44441a;
+  --warning: #d97706;
+  --warning-soft: #f59e0b24;
+  --success: #059669;
+  --success-soft: #10b9811f;
+  --info: #0284c7;
+  --info-soft: #0ea5e91f;
+  --overlay: #0f172a66;
+  --shadow-sm: 0 1px 2px #0f172a0f, 0 1px 1px #0f172a0a;
+  --shadow-md: 0 4px 12px -2px #0f172a14, 0 2px 4px -2px #0f172a0f;
+  --shadow-lg: 0 24px 48px -12px #0f172a33, 0 8px 16px -8px #0f172a1f;
+  --cat-video: #8b5cf6;
+  --cat-audio: #ec4899;
+  --cat-image: #f59e0b;
+  --cat-document: #0ea5e9;
+  --cat-archive: #f97316;
+  --cat-diskImage: #ef4444;
+  --cat-code: #10b981;
+  --cat-executable: #64748b;
+  --cat-database: #6366f1;
+  --cat-log: #84cc16;
+  --cat-other: #9ca3af;
+}
+
+/* ---------- Tokens: dark ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0d12;
+  --surface: #12151c;
+  --surface-2: #181c25;
+  --surface-3: #1f2430;
+  --border: #232836;
+  --border-strong: #323949;
+  --text: #e6e8ee;
+  --text-muted: #9aa3b5;
+  --text-faint: #6b7487;
+  --accent: #34d399;
+  --accent-strong: #10b981;
+  --accent-soft: #34d3991f;
+  --accent-contrast: #04130d;
+  --danger: #f87171;
+  --danger-soft: #f871711f;
+  --warning: #fbbf24;
+  --warning-soft: #fbbf241f;
+  --success: #34d399;
+  --success-soft: #34d3991f;
+  --info: #38bdf8;
+  --info-soft: #38bdf81f;
+  --overlay: #000000a6;
+  --shadow-sm: 0 0 0 transparent;
+  --shadow-md: 0 0 0 transparent;
+  --shadow-lg: 0 24px 48px -12px #000000cc;
+  --cat-video: #a78bfa;
+  --cat-audio: #f472b6;
+  --cat-image: #fbbf24;
+  --cat-document: #38bdf8;
+  --cat-archive: #fb923c;
+  --cat-diskImage: #f87171;
+  --cat-code: #34d399;
+  --cat-executable: #94a3b8;
+  --cat-database: #818cf8;
+  --cat-log: #a3e635;
+  --cat-other: #6b7280;
+}
+
+/* ---------- Tailwind mapping ---------- */
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-overlay: var(--overlay);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+/* ---------- Base ---------- */
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: "cv11", "ss01", "tnum";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Smooth theme change (only while the class is set by the theme switcher). */
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, fill 200ms ease !important;
+}
+
+.tnum { font-variant-numeric: tabular-nums; }
+.selectable { user-select: text; }
+
+::selection { background: var(--accent-soft); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+
+@keyframes rc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes rc-indeterminate { 0% { left: -40%; } 100% { left: 100%; } }
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+
+.rc-skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: rc-shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

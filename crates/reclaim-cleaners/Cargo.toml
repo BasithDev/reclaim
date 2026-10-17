@@ -11,3 +11,7 @@ reclaim-core = { path = "../reclaim-core" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+trash = "5"
+walkdir = "2"
+dirs = "5"
+which = "7"

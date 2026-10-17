@@ -22,3 +22,6 @@ pub use windows::*;
 //       Pseudo/virtual locations never worth scanning (/proc, /sys, /dev, /run, ...).
 //   pub fn is_link_like(meta: &std::fs::Metadata) -> bool
 //       Symlinks, and on Windows junctions/reparse points.
+//   pub fn names_equal(a: &str, b: &str) -> bool          (added) file-name comparison (case-insensitive on Windows)
+//   pub fn is_system_mount(mount_point: &str) -> bool      (added) true for the OS drive
+//   pub fn is_hidden_mount(mount_point: &str) -> bool      (added) implementation-detail mounts (snap, docker, ...)
