@@ -13,6 +13,7 @@ import {
   Tooltip, useChartTheme, useToast,
 } from "../../components";
 import { useScanStore } from "../../store/scan";
+import { useDeleteMode } from "../../store/settings";
 import { useUiStore } from "../../store/ui";
 import { useAsync } from "../dashboard/useAsync";
 
@@ -33,6 +34,7 @@ function crumbs(root: string, path: string | null) {
 }
 
 export default function ExplorerPage() {
+  const del = useDeleteMode();
   const status = useScanStore((s) => s.status);
   const summary = useScanStore((s) => s.summary);
   const startScan = useScanStore((s) => s.startScan);
@@ -82,9 +84,9 @@ export default function ExplorerPage() {
     if (!confirm) return;
     setBusy(true);
     try {
-      const freed = await api.removePath(confirm.path, false);
+      const freed = await api.removePath(confirm.path, del.permanent);
       setRemoved((s) => new Set(s).add(confirm.path));
-      toast({ title: "Moved to Trash", description: `${confirm.name} (${formatBytes(freed)})`, tone: "success" });
+      toast({ title: del.past, description: `${confirm.name} (${formatBytes(freed)})`, tone: "success" });
       setConfirm(null);
     } catch (e) {
       toast({ title: "Could not remove", description: String(e), tone: "error" });
@@ -111,7 +113,7 @@ export default function ExplorerPage() {
         animationDurationUpdate: 500,
         tooltip: tip,
         series: [{
-          type: "treemap", roam: false, nodeClick: false, breadcrumb: { show: false }, width: "100%", height: "100%",
+          type: "treemap", roam: false, nodeClick: false, breadcrumb: { show: false }, left: 0, top: 0, right: 0, bottom: 0,
           squareRatio: 1.2, visibleMin: 300,
           label: { show: true, formatter: "{b}", color: "#fff", overflow: "truncate" },
           upperLabel: { show: true, height: 22, color: "#fff", formatter: "{b}" },
@@ -196,9 +198,9 @@ export default function ExplorerPage() {
                                 initial={{ width: 0 }} animate={{ width: `${Math.max(frac * 100, 1)}%` }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} />
                             </span>
                           </span>
-                          <span className="w-24 shrink-0 text-right text-xs">
-                            <span className="tnum block font-medium text-text">{formatBytes(c.sizeBytes)}</span>
-                            <span className="tnum text-muted">{formatPercent(c.sizeBytes, total, 1)}{c.modifiedMs ? ` · ${formatRelative(c.modifiedMs)}` : ""}</span>
+                          <span className="w-28 shrink-0 text-right text-xs">
+                            <span className="tnum block whitespace-nowrap font-medium text-text">{formatBytes(c.sizeBytes)} <span className="font-normal text-muted">· {formatPercent(c.sizeBytes, total, 1)}</span></span>
+                            {c.modifiedMs != null && <span className="block truncate whitespace-nowrap text-faint">{formatRelative(c.modifiedMs)}</span>}
                           </span>
                         </button>
                         <DropdownMenu
@@ -207,7 +209,7 @@ export default function ExplorerPage() {
                             { label: c.isDir ? "Open in file manager" : "Open", icon: FolderOpen, onSelect: () => void openPath(c.path).catch((e) => toast({ title: "Could not open", description: String(e), tone: "error" })) },
                             { label: "Reveal in file manager", icon: Eye, onSelect: () => void revealItemInDir(c.path).catch((e) => toast({ title: "Could not reveal", description: String(e), tone: "error" })) },
                             "separator",
-                            { label: "Move to Trash", icon: Trash2, danger: true, onSelect: () => setConfirm(c) },
+                            { label: del.verb, icon: Trash2, danger: true, onSelect: () => setConfirm(c) },
                           ]}
                         />
                       </motion.div>
@@ -224,8 +226,8 @@ export default function ExplorerPage() {
       )}
 
       <ConfirmDialog open={!!confirm} onClose={() => setConfirm(null)} onConfirm={() => void trash()} loading={busy} tone="danger"
-        title="Move to Trash?" confirmLabel="Move to Trash"
-        message={confirm && <>Move <b>{confirm.name}</b> ({formatBytes(confirm.sizeBytes)}) to the Trash? You can restore it from there.</>} />
+        title={del.question} confirmLabel={del.verb}
+        message={confirm && <><b>{confirm.name}</b> ({formatBytes(confirm.sizeBytes)}). {del.note}</>} />
     </div>
   );
 }

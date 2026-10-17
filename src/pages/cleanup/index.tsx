@@ -21,7 +21,6 @@ const CONCURRENCY = 4;
 
 export default function CleanupPage() {
   const { toast } = useToast();
-  const permanent = useSettingsStore((s) => s.settings.permanentDelete);
   const confirmBefore = useSettingsStore((s) => s.settings.confirmBeforeClean);
   const [cleaners, setCleaners] = useState<CleanerInfo[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -30,6 +29,7 @@ export default function CleanupPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [running, setRunning] = useState(false);
+  const [cleaningIds, setCleaningIds] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<CleanupResult[] | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -84,21 +84,27 @@ export default function CleanupPage() {
   };
 
   const run = async () => {
-    setRunning(true);
     const ids = selectedList.map((c) => c.id);
+    // Close the dialog straight away so the rows themselves show progress while removal runs.
+    setConfirmOpen(false);
+    setResults(null);
+    setRunning(true);
+    setCleaningIds(new Set(ids));
     try {
-      const res = await api.runCleaners(ids, permanent);
+      // Junk is always deleted permanently: sending caches to the Trash frees nothing.
+      const res = await api.runCleaners(ids, true);
       setResults(res);
       setSelected(new Set());
-      setConfirmOpen(false);
       const freed = res.reduce((s, r) => s + r.freedBytes, 0);
-      toast({ title: `Freed ${formatBytes(freed)}`, description: `${res.filter((r) => r.success).length} of ${res.length} cleaners finished`, tone: "success" });
+      const withIssues = res.filter((r) => !r.success || r.errors.length > 0).length;
+      toast({ title: `Freed ${formatBytes(freed)}`, description: withIssues ? `${withIssues} of ${res.length} cleaners skipped some items` : `All ${res.length} cleaners finished`, tone: withIssues ? "info" : "success" });
       ids.forEach((id) => void loadPreview(id));
       window.scrollTo?.({ top: 0 });
     } catch (e) {
       toast({ title: "Cleanup failed", description: String(e), tone: "error" });
     } finally {
       setRunning(false);
+      setCleaningIds(new Set());
     }
   };
 
@@ -136,7 +142,7 @@ export default function CleanupPage() {
                 <div className="mt-3 border-t border-border">
                   {list.map((c) => (
                     <CleanerRow
-                      key={c.id} info={c} state={previews[c.id]} selected={selected.has(c.id)} expanded={expanded.has(c.id)}
+                      key={c.id} info={c} state={previews[c.id]} selected={selected.has(c.id)} expanded={expanded.has(c.id)} cleaning={cleaningIds.has(c.id)}
                       onToggle={(v) => setSelected((s) => flip(s, c.id, v))} onExpand={() => setExpanded((s) => flip(s, c.id))} onRetry={() => void loadPreview(c.id)}
                     />
                   ))}
@@ -148,7 +154,7 @@ export default function CleanupPage() {
       )}
 
       <AnimatePresence>
-        {selectedList.length > 0 && (
+        {(selectedList.length > 0 || running) && (
           <motion.div
             initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 34 }}
             className="sticky bottom-0 z-10 -mb-4 mt-6"
@@ -156,9 +162,9 @@ export default function CleanupPage() {
             <div className="flex items-center gap-4 rounded-xl border border-border bg-surface px-5 py-3 shadow-lg">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-text"><AnimatedNumber value={selectedBytes} format={formatBytes} /> selected</div>
-                <div className="text-xs text-muted">{selectedList.length} cleaner{selectedList.length === 1 ? "" : "s"} · {permanent ? "permanent delete" : "moved to Trash where possible"}</div>
+                <div className="text-xs text-muted">{running ? "Cleaning… keep Reclaim open" : `${selectedList.length} cleaner${selectedList.length === 1 ? "" : "s"} · deleted permanently`}</div>
               </div>
-              <Button variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+              <Button variant="ghost" disabled={running} onClick={() => setSelected(new Set())}>Clear</Button>
               <Button variant="primary" icon={Sparkles} loading={running} onClick={() => (confirmBefore ? setConfirmOpen(true) : void run())}>Clean selected</Button>
             </div>
           </motion.div>
@@ -167,7 +173,7 @@ export default function CleanupPage() {
 
       <ConfirmDialog
         open={confirmOpen} onClose={() => !running && setConfirmOpen(false)} onConfirm={() => void run()} loading={running}
-        title="Clean selected items?" confirmLabel={`Clean ${formatBytes(selectedBytes)}`} tone={permanent ? "danger" : "default"}
+        title="Clean selected items?" confirmLabel={`Clean ${formatBytes(selectedBytes)}`} tone="danger"
         message={
           <div className="space-y-3">
             <ul className="space-y-1">
@@ -176,7 +182,7 @@ export default function CleanupPage() {
                 return <li key={c.id} className="flex justify-between gap-4"><span className="text-text">{c.name}</span><span className="tnum">{p?.status === "ok" ? formatBytes(p.preview.totalBytes) : "-"}</span></li>;
               })}
             </ul>
-            <p>{permanent ? "Files will be deleted permanently and cannot be restored." : "Files are moved to the Trash / Recycle Bin when possible, so you can restore them."}</p>
+            <p>These are caches, logs and leftovers, so they are deleted permanently (not moved to the Trash). Apps recreate caches when they need them.</p>
             {anyCommand && <p>Some cleaners run system commands that remove data directly.</p>}
             {anyAdmin && <p className="flex items-start gap-2"><ShieldAlert size={15} className="mt-0.5 shrink-0 text-warning" />Administrator permission will be requested for some of these.</p>}
           </div>

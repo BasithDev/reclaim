@@ -80,3 +80,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 }));
+
+/** Wording + flag for deleting files from Explorer / Large Files / Dashboard, following Settings › Delete mode. */
+export function useDeleteMode() {
+  const permanent = useSettingsStore((s) => s.settings.permanentDelete);
+  return permanent
+    ? { permanent, verb: "Delete", past: "Deleted", question: "Delete permanently?", note: "This cannot be undone." }
+    : { permanent, verb: "Move to Trash", past: "Moved to Trash", question: "Move to Trash?", note: "You can restore from the Trash." };
+}

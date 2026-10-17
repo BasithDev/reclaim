@@ -1,6 +1,6 @@
 // Reclaim: one expandable cleaner row (checkbox, name, risk, admin shield, lazily loaded size, preview items).
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, ChevronRight, ShieldAlert, Terminal } from "lucide-react";
+import { AlertCircle, ChevronRight, Loader2, ShieldAlert, Terminal } from "lucide-react";
 import { Badge, Checkbox, IconButton, Skeleton, Tooltip, cn } from "../../components";
 import { formatBytes, formatRelative } from "../../lib/format";
 import type { CleanerInfo, CleanupPreview, Risk } from "../../lib/types";
@@ -10,8 +10,10 @@ export type PreviewState = { status: "loading" } | { status: "error"; message: s
 const riskTone: Record<Risk, "success" | "warning" | "danger"> = { safe: "success", moderate: "warning", careful: "danger" };
 const MAX_ITEMS = 50;
 
-export function CleanerRow({ info, state, selected, expanded, onToggle, onExpand, onRetry }: {
+export function CleanerRow({ info, state, selected, expanded, cleaning = false, onToggle, onExpand, onRetry }: {
   info: CleanerInfo; state: PreviewState | undefined; selected: boolean; expanded: boolean;
+  /** True while this cleaner is being run: shows a spinner instead of the size. */
+  cleaning?: boolean;
   onToggle: (v: boolean) => void; onExpand: () => void; onRetry: () => void;
 }) {
   const ok = state?.status === "ok" ? state.preview : null;
@@ -19,7 +21,7 @@ export function CleanerRow({ info, state, selected, expanded, onToggle, onExpand
   return (
     <div className={cn("border-b border-border last:border-0", empty && "opacity-60")}>
       <div className="flex items-center gap-3 px-5 py-3">
-        <Checkbox checked={selected} onChange={onToggle} />
+        <Checkbox checked={selected} onChange={(v) => { if (!cleaning) onToggle(v); }} />
         <button onClick={onExpand} className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left" aria-expanded={expanded}>
           <ChevronRight size={14} className={cn("shrink-0 text-faint transition-transform duration-200", expanded && "rotate-90")} />
           <div className="min-w-0 flex-1">
@@ -32,8 +34,9 @@ export function CleanerRow({ info, state, selected, expanded, onToggle, onExpand
             <div className="truncate text-xs text-muted">{info.description}</div>
           </div>
         </button>
-        <div className="w-24 shrink-0 text-right text-sm font-medium text-text tnum">
-          {!state || state.status === "loading" ? <Skeleton className="ml-auto h-4 w-16" />
+        <div className="w-28 shrink-0 text-right text-sm font-medium text-text tnum">
+          {cleaning ? <span className="inline-flex items-center gap-1.5 text-xs font-normal text-accent"><Loader2 size={13} className="animate-spin" />Cleaning…</span>
+            : !state || state.status === "loading" ? <Skeleton className="ml-auto h-4 w-16" />
             : state.status === "error" ? (
               <Tooltip content={state.message}><button onClick={onRetry} className="inline-flex cursor-pointer items-center gap-1 text-xs text-danger"><AlertCircle size={13} />Retry</button></Tooltip>
             ) : empty ? <span className="text-xs font-normal text-faint">Nothing to clean</span> : formatBytes(state.preview.totalBytes)}

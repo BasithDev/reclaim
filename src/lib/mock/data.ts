@@ -172,4 +172,4 @@ export const DELETED_OPEN: DeletedOpenFile[] = [
   { pid: 9120, processName: "code", path: "/home/basith/.config/Code/logs/exthost-old.log (deleted)", sizeBytes: 420 * MB },
 ];
 
-export const DEFAULT_SETTINGS: Settings = { theme: "system", excludedPaths: [`${HOME}/.steam`], permanentDelete: false, confirmBeforeClean: true, crossFilesystems: false, defaultScanRoot: null, saveSnapshots: true };
+export const DEFAULT_SETTINGS: Settings = { theme: "system", excludedPaths: [`${HOME}/.steam`], permanentDelete: true, confirmBeforeClean: true, crossFilesystems: false, defaultScanRoot: null, saveSnapshots: true };

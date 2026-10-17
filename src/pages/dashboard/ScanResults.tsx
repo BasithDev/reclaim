@@ -1,12 +1,14 @@
 // Reclaim: Dashboard results after a scan: stat tiles, type donut, top folders bar chart,
-// reclaimable summary, deleted-but-open warning and "grew since last scan".
+// reclaimable summary, deleted-but-open warning and "grew since last scan". Clicking a file type opens its files.
+import { useState } from "react";
 import { motion } from "motion/react";
 import ReactECharts from "echarts-for-react";
-import { AlertTriangle, ArrowUpRight, Clock, Files, FolderTree, HardDrive, RefreshCw, Sparkles, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, ChevronRight, Clock, Files, FolderTree, HardDrive, RefreshCw, Sparkles, TrendingUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { formatBytes, formatCount, formatDelta, formatDuration } from "../../lib/format";
-import type { ScanSummary } from "../../lib/types";
-import { AnimatedNumber, Badge, Button, Card, EmptyState, Skeleton, StatTile, categoryMeta, useChartTheme } from "../../components";
+import type { FileCategory, ScanSummary } from "../../lib/types";
+import { AnimatedNumber, Badge, Button, Card, Dialog, EmptyState, Skeleton, StatTile, categoryMeta, useChartTheme } from "../../components";
+import { CategoryFilesDialog } from "./CategoryFilesDialog";
 import { useUiStore } from "../../store/ui";
 import { useAsync } from "./useAsync";
 
@@ -22,6 +24,7 @@ function ErrorRow({ message, retry }: { message: string; retry: () => void }) {
 }
 
 export default function ScanResults({ summary }: { summary: ScanSummary }) {
+  const [category, setCategory] = useState<FileCategory | null>(null);
   return (
     <motion.div initial="hidden" animate="show" transition={{ staggerChildren: 0.06 }} className="grid gap-4">
       <motion.div variants={item} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -32,22 +35,23 @@ export default function ScanResults({ summary }: { summary: ScanSummary }) {
       </motion.div>
       <DeletedOpen />
       <motion.div variants={item} className="grid gap-4 lg:grid-cols-2">
-        <TypeDonut summary={summary} />
+        <TypeDonut summary={summary} onPick={setCategory} />
         <TopFolders summary={summary} />
       </motion.div>
       <motion.div variants={item} className="grid gap-4 lg:grid-cols-2">
         <Reclaimable />
         <Growth summary={summary} />
       </motion.div>
+      <CategoryFilesDialog scanId={summary.scanId} category={category} onClose={() => setCategory(null)} />
     </motion.div>
   );
 }
 
-function TypeDonut({ summary }: { summary: ScanSummary }) {
+function TypeDonut({ summary, onPick }: { summary: ScanSummary; onPick: (c: FileCategory) => void }) {
   const t = useChartTheme();
   const data = summary.typeBreakdown.filter((s) => s.bytes > 0).sort((a, b) => b.bytes - a.bytes);
   return (
-    <Card title="What's using the space" subtitle="By file type">
+    <Card title="What's using the space" subtitle="By file type · click one to see its files">
       {data.length === 0 ? (
         <EmptyState icon={HardDrive} title="Nothing to show" description="No files were counted in this scan." />
       ) : (
@@ -55,6 +59,7 @@ function TypeDonut({ summary }: { summary: ScanSummary }) {
           <ReactECharts
             style={{ height: 240, width: 240, flexShrink: 0 }}
             notMerge
+            onEvents={{ click: (p: { dataIndex: number }) => { const d = data[p.dataIndex]; if (d) onPick(d.category); } }}
             option={{
               animationDuration: 900, animationEasing: "cubicOut",
               tooltip: {
@@ -62,19 +67,24 @@ function TypeDonut({ summary }: { summary: ScanSummary }) {
                 formatter: (p: { name: string; value: number; percent: number }) => `${p.name}<br/><b>${formatBytes(p.value)}</b> (${p.percent}%)`,
               },
               series: [{
-                type: "pie", radius: ["58%", "88%"], padAngle: 2, itemStyle: { borderRadius: 6 },
+                type: "pie", cursor: "pointer", radius: ["58%", "88%"], padAngle: 2, itemStyle: { borderRadius: 6 },
                 label: { show: false }, emphasis: { scale: true, scaleSize: 6 },
                 data: data.map((s) => ({ name: categoryMeta[s.category].label, value: s.bytes, itemStyle: { color: categoryMeta[s.category].color } })),
               }],
               graphic: [{ type: "text", left: "center", top: "center", style: { text: formatBytes(summary.totalBytes), fill: t.textColor, fontSize: 18, fontWeight: 600 } }],
             }}
           />
-          <ul className="grid w-full flex-1 gap-1.5 text-sm">
-            {data.slice(0, 7).map((s) => (
-              <li key={s.category} className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: categoryMeta[s.category].color }} />
-                <span className="flex-1 truncate text-text">{categoryMeta[s.category].label}</span>
-                <span className="tnum text-muted">{formatBytes(s.bytes)}</span>
+          <ul className="grid w-full min-w-0 flex-1 grid-cols-1 gap-0.5 text-sm">
+            {data.map((s) => (
+              <li key={s.category}>
+                <button onClick={() => onPick(s.category)}
+                  className="group flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-surface-2">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: categoryMeta[s.category].color }} />
+                  <span className="flex-1 truncate text-text">{categoryMeta[s.category].label}</span>
+                  <span className="tnum text-xs text-faint">{formatCount(s.count)}</span>
+                  <span className="w-20 text-right tnum text-muted">{formatBytes(s.bytes)}</span>
+                  <ChevronRight size={14} className="shrink-0 text-faint opacity-0 transition-opacity group-hover:opacity-100" />
+                </button>
               </li>
             ))}
           </ul>
@@ -164,13 +174,13 @@ function Growth({ summary }: { summary: ScanSummary }) {
         : !data ? <EmptyState icon={TrendingUp} title="No previous scan" description="Scan this location again later to see what grew." />
         : data.entries.length === 0 ? <EmptyState icon={TrendingUp} title="No changes" description="Nothing changed noticeably since the last scan." />
         : (
-          <ul className="grid gap-3">
+          <ul className="grid grid-cols-1 gap-3">
             {data.entries.map((e) => (
-              <li key={e.path}>
+              <li key={e.path} className="min-w-0">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="min-w-0 flex-1 truncate text-text" title={e.path}>{e.path}</span>
                   {e.isNew && <Badge tone="info">new</Badge>}
-                  <span className={`tnum font-medium ${e.deltaBytes >= 0 ? "text-danger" : "text-success"}`}>{formatDelta(e.deltaBytes)}</span>
+                  <span className={`shrink-0 tnum font-medium ${e.deltaBytes >= 0 ? "text-danger" : "text-success"}`}>{formatDelta(e.deltaBytes)}</span>
                 </div>
                 <div className="mt-1 h-1 overflow-hidden rounded-full bg-surface-3">
                   <motion.div className="h-full rounded-full" style={{ background: e.deltaBytes >= 0 ? "var(--danger)" : "var(--success)" }}
@@ -185,7 +195,7 @@ function Growth({ summary }: { summary: ScanSummary }) {
 }
 
 function DeletedOpen() {
-  const setPage = useUiStore((s) => s.setPage);
+  const [open, setOpen] = useState(false);
   const { data } = useAsync(() => api.getDeletedOpenFiles(), []);
   if (!data || data.length === 0) return null;
   const bytes = data.reduce((n, f) => n + f.sizeBytes, 0);
@@ -196,7 +206,23 @@ function DeletedOpen() {
         <b>{formatBytes(bytes)}</b> is held by {data.length} deleted {data.length === 1 ? "file" : "files"} still open in running programs
         ({[...new Set(data.map((f) => f.processName))].slice(0, 3).join(", ")}). Restart those programs to free it.
       </p>
-      <Button size="sm" onClick={() => setPage("cleanup")}>Details</Button>
+      <Button size="sm" onClick={() => setOpen(true)}>Details</Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="Deleted files still held open" size="lg"
+        footer={<Button onClick={() => setOpen(false)}>Close</Button>}>
+        <p className="pb-2">These files were deleted, but a running program still has them open, so their space isn't freed yet.
+          Closing or restarting the program releases it.</p>
+        <ul className="divide-y divide-border">
+          {[...data].sort((a, b) => b.sizeBytes - a.sizeBytes).map((f) => (
+            <li key={`${f.pid}:${f.path}`} className="flex items-center gap-3 py-2">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm text-text" title={f.path}>{f.path.replace(/ \(deleted\)$/, "")}</div>
+                <div className="text-xs text-faint">{f.processName} · PID {f.pid}</div>
+              </div>
+              <span className="shrink-0 text-sm font-medium text-text tnum">{formatBytes(f.sizeBytes)}</span>
+            </li>
+          ))}
+        </ul>
+      </Dialog>
     </motion.div>
   );
 }

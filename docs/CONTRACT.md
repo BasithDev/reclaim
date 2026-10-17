@@ -39,7 +39,7 @@ JSON is camelCase. Rust command params are snake_case (Tauri maps them). Errors 
 | save_settings | settings: Settings | () |
 
 `Settings` is defined in Rust in `src-tauri/src/settings.rs` (A4), matching `src/lib/types.ts`. Defaults:
-theme "system", excludedPaths [], permanentDelete false, confirmBeforeClean true, crossFilesystems false,
+theme "system", excludedPaths [], permanentDelete true, confirmBeforeClean true, crossFilesystems false,
 defaultScanRoot null, saveSnapshots true.
 
 **Events** (emitted by src-tauri, wrapped in `events` in api.ts):

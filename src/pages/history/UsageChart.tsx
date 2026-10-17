@@ -11,7 +11,7 @@ export function UsageChart({ snapshots }: { snapshots: SnapshotMeta[] }) {
     const pts = snapshots.filter((s) => s.diskUsedBytes != null).sort((a, b) => a.takenAtMs - b.takenAtMs);
     return {
       animationDuration: 600,
-      grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 44, top: 16, bottom: 8, containLabel: true },
       tooltip: {
         trigger: "axis", backgroundColor: t.tooltipBg, borderColor: t.tooltipBorder, textStyle: { color: t.textColor, fontSize: 12 },
         formatter: (p: { dataIndex: number }[]) => {

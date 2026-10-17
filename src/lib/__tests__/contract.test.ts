@@ -69,7 +69,7 @@ describe("Rust <-> TS contract", () => {
 
   it("Settings defaults match CONTRACT.md", () => {
     expect(fx.Settings).toEqual({
-      theme: "system", excludedPaths: [], permanentDelete: false, confirmBeforeClean: true,
+      theme: "system", excludedPaths: [], permanentDelete: true, confirmBeforeClean: true,
       crossFilesystems: false, defaultScanRoot: null, saveSnapshots: true,
     });
   });

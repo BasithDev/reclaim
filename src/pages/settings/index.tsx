@@ -105,7 +105,7 @@ export default function SettingsPage() {
         </Card>
 
         <Card title="Cleanup">
-          <Row title="Delete mode" description={settings.permanentDelete ? "Files are deleted permanently and cannot be restored." : "Files go to the Trash / Recycle Bin and can be restored."}>
+          <Row title="Deleting your files" description={settings.permanentDelete ? "Files you delete from Explorer, Large Files or the Dashboard are removed permanently. Junk from Cleanup is always deleted permanently." : "Files you delete from Explorer, Large Files or the Dashboard go to the Trash first. Junk from Cleanup is always deleted permanently."}>
             <SegmentedControl
               value={settings.permanentDelete ? "permanent" : "trash"} onChange={(v) => void save({ permanentDelete: v === "permanent" })}
               options={[{ value: "trash", label: "Trash" }, { value: "permanent", label: "Permanent" }]}

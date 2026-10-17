@@ -7,7 +7,7 @@ fn defaults_match_contract() {
     let s = Settings::default();
     assert_eq!(s.theme, "system");
     assert!(s.excluded_paths.is_empty());
-    assert!(!s.permanent_delete);
+    assert!(s.permanent_delete);
     assert!(s.confirm_before_clean);
     assert!(!s.cross_filesystems);
     assert_eq!(s.default_scan_root, None);

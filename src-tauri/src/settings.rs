@@ -22,7 +22,7 @@ impl Default for Settings {
         Self {
             theme: "system".into(),
             excluded_paths: Vec::new(),
-            permanent_delete: false,
+            permanent_delete: true,
             confirm_before_clean: true,
             cross_filesystems: false,
             default_scan_root: None,

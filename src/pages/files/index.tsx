@@ -12,11 +12,13 @@ import {
   Tooltip, categoryMeta, useToast,
 } from "../../components";
 import { useScanStore } from "../../store/scan";
+import { useDeleteMode } from "../../store/settings";
 import { useAsync } from "../dashboard/useAsync";
 
 type SortKey = "size" | "modified";
 
 export default function FilesPage() {
+  const del = useDeleteMode();
   const status = useScanStore((s) => s.status);
   const summary = useScanStore((s) => s.summary);
   const startScan = useScanStore((s) => s.startScan);
@@ -68,12 +70,12 @@ export default function FilesPage() {
     setBusy(true);
     let freed = 0; const done = new Set<string>(); const failed: string[] = [];
     for (const f of confirm) {
-      try { freed += await api.removePath(f.path, false); done.add(f.path); }
+      try { freed += await api.removePath(f.path, del.permanent); done.add(f.path); }
       catch (e) { failed.push(`${f.name}: ${e}`); }
     }
     setRemoved((s) => new Set([...s, ...done]));
     setSelected((s) => new Set([...s].filter((p) => !done.has(p))));
-    if (done.size) toast({ title: `Moved ${done.size} ${done.size === 1 ? "file" : "files"} to Trash`, description: `${formatBytes(freed)} freed`, tone: "success" });
+    if (done.size) toast({ title: `${del.past} ${done.size} ${done.size === 1 ? "file" : "files"}`, description: `${formatBytes(freed)} freed`, tone: "success" });
     if (failed.length) toast({ title: `${failed.length} could not be removed`, description: failed[0], tone: "error" });
     setBusy(false); setConfirm(null);
   };
@@ -161,8 +163,8 @@ export default function FilesPage() {
                         <IconButton icon={Eye} label="Reveal in file manager" size="sm"
                           onClick={() => void revealItemInDir(f.path).catch((e) => toast({ title: "Could not reveal", description: String(e), tone: "error" }))} />
                       </Tooltip>
-                      <Tooltip content="Move to Trash">
-                        <IconButton icon={Trash2} label="Move to Trash" size="sm" onClick={() => setConfirm([f])} />
+                      <Tooltip content={del.verb}>
+                        <IconButton icon={Trash2} label={del.verb} size="sm" onClick={() => setConfirm([f])} />
                       </Tooltip>
                     </span>
                   </div>
@@ -181,16 +183,16 @@ export default function FilesPage() {
             className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-4 rounded-xl border border-border-strong bg-surface px-5 py-3 shadow-lg">
             <span className="text-sm text-text"><b>{selectedFiles.length}</b> selected · <b className="tnum">{formatBytes(selectedBytes)}</b></span>
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
-            <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm(selectedFiles)}>Move to Trash</Button>
+            <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm(selectedFiles)}>{del.verb}</Button>
           </motion.div>
         )}
       </AnimatePresence>
 
       <ConfirmDialog open={!!confirm} onClose={() => setConfirm(null)} onConfirm={() => void trash()} loading={busy} tone="danger"
-        title="Move to Trash?" confirmLabel="Move to Trash"
+        title={del.question} confirmLabel={del.verb}
         message={confirm && (confirm.length === 1
-          ? <>Move <b>{confirm[0].name}</b> ({formatBytes(confirm[0].sizeBytes)}) to the Trash?</>
-          : <>Move <b>{confirm.length} files</b> ({formatBytes(confirm.reduce((n, f) => n + f.sizeBytes, 0))}) to the Trash? You can restore them from there.</>)} />
+          ? <><b>{confirm[0].name}</b> ({formatBytes(confirm[0].sizeBytes)}). {del.note}</>
+          : <><b>{confirm.length} files</b> ({formatBytes(confirm.reduce((n, f) => n + f.sizeBytes, 0))}). {del.note}</>)} />
     </div>
   );
 }

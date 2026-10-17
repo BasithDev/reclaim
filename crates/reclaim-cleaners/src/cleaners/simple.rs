@@ -31,6 +31,17 @@ pub fn always(_: &Path) -> bool {
     true
 }
 
+impl SimpleFiles {
+    /// What this cleaner can actually remove: items needing admin go through the elevated path;
+    /// everything else must be owned by the current user, otherwise removal is bound to fail.
+    fn candidates(&self) -> Vec<Candidate> {
+        (self.collect)()
+            .into_iter()
+            .filter(|c| (self.needs_admin)(&c.path) || safety::owned_by_current_user(&c.path))
+            .collect()
+    }
+}
+
 impl Cleaner for SimpleFiles {
     fn info(&self) -> CleanerInfo {
         self.info.clone()
@@ -41,14 +52,14 @@ impl Cleaner for SimpleFiles {
     }
 
     fn preview(&self) -> Result<CleanupPreview> {
-        Ok(preview_from(&self.info.id, (self.collect)(), None))
+        Ok(preview_from(&self.info.id, self.candidates(), None))
     }
 
     fn clean(&self, options: &CleanOptions) -> Result<CleanupResult> {
         let roots = (self.roots)();
         let permanent = self.force_permanent || options.permanent;
         let (admin, user): (Vec<Candidate>, Vec<Candidate>) =
-            (self.collect)().into_iter().partition(|c| (self.needs_admin)(&c.path));
+            self.candidates().into_iter().partition(|c| (self.needs_admin)(&c.path));
         let (mut freed, mut removed) = (0u64, 0u64);
         let mut errors = Vec::new();
         for c in &user {

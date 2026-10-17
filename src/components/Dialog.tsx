@@ -6,10 +6,10 @@ import { X } from "lucide-react";
 import { Button, IconButton } from "./Button";
 import { cn } from "./cn";
 
-const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl" };
+const widths = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
 
 export function Dialog({ open, onClose, title, children, footer, size = "md" }: {
-  open: boolean; onClose: () => void; title: string; children?: ReactNode; footer?: ReactNode; size?: "sm" | "md" | "lg";
+  open: boolean; onClose: () => void; title: string; children?: ReactNode; footer?: ReactNode; size?: "sm" | "md" | "lg" | "xl";
 }) {
   useEffect(() => {
     if (!open) return;

@@ -150,7 +150,7 @@ export type ThemePreference = "system" | "light" | "dark";
 export interface Settings {
   theme: ThemePreference;
   excludedPaths: string[];
-  /** Default for cleanups: false = Trash/Recycle Bin. */
+  /** Explorer / Large Files / Dashboard deletes: true = permanent (default), false = Trash. Cleanup is always permanent. */
   permanentDelete: boolean;
   confirmBeforeClean: boolean;
   crossFilesystems: boolean;

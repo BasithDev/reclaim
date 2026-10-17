@@ -229,7 +229,56 @@ fn remove_permanent(path: &Path, md: &std::fs::Metadata) -> Result<()> {
             let _ = std::fs::set_permissions(path, perms);
             attempt(path).map_err(|e| io_err(path, e))
         }
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied && is_real_dir => {
+            // Read-only folders we own (e.g. Go/dotslash caches use mode 555): make them
+            // writable, then retry once. Anything owned by another user still fails.
+            make_tree_writable(path);
+            attempt(path).map_err(|e| io_err(path, e))
+        }
         Err(e) => Err(io_err(path, e)),
+    }
+}
+
+/// Grants the owner write access to every directory under `path` (never following links),
+/// so a permanent delete can remove read-only trees the user owns.
+fn make_tree_writable(path: &Path) {
+    for entry in walkdir::WalkDir::new(path).follow_links(false).into_iter().flatten() {
+        let Ok(md) = entry.path().symlink_metadata() else { continue };
+        if !md.is_dir() || is_link_like(&md) {
+            continue;
+        }
+        let mut perms = md.permissions();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            perms.set_mode(perms.mode() | 0o700);
+        }
+        #[cfg(windows)]
+        {
+            #[allow(clippy::permissions_set_readonly_false)]
+            perms.set_readonly(false);
+        }
+        let _ = std::fs::set_permissions(entry.path(), perms);
+    }
+}
+
+/// True if the current user owns `path` (always true on Windows, where ACLs decide instead).
+/// Used to keep other users' / root's files out of non-admin previews, since they can't be removed.
+pub fn owned_by_current_user(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        static UID: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+        let me = *UID.get_or_init(|| std::fs::metadata("/proc/self").ok().map(|m| m.uid()));
+        match (me, path.symlink_metadata()) {
+            (Some(me), Ok(md)) => md.uid() == me,
+            _ => true,
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+        true
     }
 }
 
