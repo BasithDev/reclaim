@@ -1,0 +1,27 @@
+# Reclaim desktop app: Tauri host process.
+# Exposes reclaim-core and reclaim-cleaners to the UI as Tauri commands and events.
+# Owned by agent A4.
+[package]
+name = "reclaim"
+version.workspace = true
+description = "Find what is eating your disk and reclaim the space"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+# The `_lib` suffix avoids a bin/lib name clash on Windows (cargo#8519).
+name = "reclaim_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+reclaim-core = { path = "../crates/reclaim-core" }
+reclaim-cleaners = { path = "../crates/reclaim-cleaners" }
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+serde.workspace = true
+serde_json.workspace = true

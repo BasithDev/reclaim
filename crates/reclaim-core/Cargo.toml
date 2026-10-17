@@ -1,0 +1,12 @@
+# reclaim-core: the scanning engine (disks, directory tree, sizes, snapshots, growth diff).
+# Owned by agent A1. Pure library: no Tauri, no UI code.
+[package]
+name = "reclaim-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

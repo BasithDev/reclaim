@@ -1,0 +1,4 @@
+# Makes Reclaim its own pnpm root (stops pnpm from adopting the pnpm workspace in ~).
+packages: []
+allowBuilds:
+  esbuild: true
