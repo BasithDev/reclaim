@@ -263,7 +263,7 @@ fn largest_files_and_categories() {
     assert_eq!(all[0].category, FileCategory::Video);
     assert_eq!(all[0].extension.as_deref(), Some("mp4"));
     assert!(all.windows(2).all(|w| w[0].size_bytes >= w[1].size_bytes));
-    assert_eq!(all[0].path, r.join("m/big.mp4").to_string_lossy());
+    assert_eq!(all[0].path, r.join("m").join("big.mp4").to_string_lossy());
     let vids = res.largest_files(10, Some(FileCategory::Video));
     assert_eq!(vids.len(), 2);
     assert_eq!(vids[1].name, "small.mkv");
