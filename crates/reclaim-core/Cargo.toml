@@ -16,3 +16,7 @@ thiserror.workspace = true
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem", "Win32_Foundation"] }
+
+[dev-dependencies]
+filetime = "0.2.29"
+tempfile = "3.27.0"

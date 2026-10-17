@@ -1,7 +1,7 @@
 //! Scan commands: start/cancel a background scan, query the finished tree and largest files.
 //! Emits scan://progress, scan://complete (after the snapshot is saved) and scan://error.
 
-use crate::state::{AppState, FinishedScan};
+use crate::state::AppState;
 use reclaim_core::{CoreError, FileCategory, FileEntry, ScanOptions, ScanSummary, TreeNode};
 use serde::Serialize;
 use std::sync::atomic::Ordering;
@@ -9,10 +9,10 @@ use tauri::{AppHandle, Emitter, State};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ScanErrorPayload {
-    scan_id: String,
-    message: String,
-    cancelled: bool,
+pub struct ScanErrorPayload {
+    pub scan_id: String,
+    pub message: String,
+    pub cancelled: bool,
 }
 
 #[tauri::command]
@@ -24,29 +24,16 @@ pub fn start_scan(options: ScanOptions, app: AppHandle, state: State<'_, AppStat
 
     tauri::async_runtime::spawn_blocking(move || {
         let progress_app = app.clone();
-        let result = reclaim_core::scan::scan(
-            id.clone(),
+        let result = state.run_scan(
+            &id,
             options,
             move |p| {
                 let _ = progress_app.emit("scan://progress", p);
             },
             cancel,
         );
-        state.finish_running(&id);
         match result {
-            Ok(result) => {
-                let mut summary = result.summary.clone();
-                let save = state.settings.lock().unwrap_or_else(|p| p.into_inner()).save_snapshots;
-                if save {
-                    // A failed snapshot must not fail the scan; the History page just misses an entry.
-                    if let Ok(meta) = state.with_snapshots(|s| s.save(&result)) {
-                        summary.snapshot_id = Some(meta.id);
-                    }
-                }
-                state.store_scan(
-                    id.clone(),
-                    FinishedScan { result: std::sync::Arc::new(result), summary: summary.clone() },
-                );
+            Ok(summary) => {
                 let _ = app.emit("scan://complete", summary);
             }
             Err(e) => {

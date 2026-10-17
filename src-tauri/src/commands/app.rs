@@ -9,10 +9,10 @@ use tauri::State;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {
-    version: String,
-    os: &'static str,
-    arch: &'static str,
-    home_dir: String,
+    pub version: String,
+    pub os: &'static str,
+    pub arch: &'static str,
+    pub home_dir: String,
 }
 
 #[tauri::command]

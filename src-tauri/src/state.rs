@@ -4,7 +4,7 @@
 use crate::settings::Settings;
 use reclaim_core::scan::ScanResult;
 use reclaim_core::snapshot::SnapshotStore;
-use reclaim_core::ScanSummary;
+use reclaim_core::{CoreError, ScanOptions, ScanProgress, ScanSummary};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -89,5 +89,28 @@ impl AppState {
                 lock(&self.snapshot_error).clone().unwrap_or_default()
             )),
         }
+    }
+
+    /// Runs a scan to completion on the current thread: scan, optional snapshot, remember the result.
+    /// The Tauri command wraps this in spawn_blocking and emits events; tests call it directly.
+    pub fn run_scan(
+        &self,
+        scan_id: &str,
+        options: ScanOptions,
+        on_progress: impl Fn(ScanProgress) + Send + Sync,
+        cancel: Arc<AtomicBool>,
+    ) -> Result<ScanSummary, CoreError> {
+        let result = reclaim_core::scan::scan(scan_id.to_string(), options, on_progress, cancel);
+        self.finish_running(scan_id);
+        let result = result?;
+        let mut summary = result.summary.clone();
+        if lock(&self.settings).save_snapshots {
+            // A failed snapshot must not fail the scan; the History page just misses an entry.
+            if let Ok(meta) = self.with_snapshots(|s| s.save(&result)) {
+                summary.snapshot_id = Some(meta.id);
+            }
+        }
+        self.store_scan(scan_id.to_string(), FinishedScan { result: Arc::new(result), summary: summary.clone() });
+        Ok(summary)
     }
 }

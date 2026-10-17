@@ -7,7 +7,8 @@ use crate::util::{children_of, days, Candidate};
 use crate::{Cleaner, CleanerGroup, Risk};
 
 fn downloads() -> Option<PathBuf> {
-    dirs::download_dir().filter(|p| p.is_dir())
+    // dirs returns None when ~/.config/user-dirs.dirs is missing; fall back to ~/Downloads.
+    dirs::download_dir().or_else(|| dirs::home_dir().map(|h| h.join("Downloads"))).filter(|p| p.is_dir())
 }
 
 fn collect() -> Vec<Candidate> {

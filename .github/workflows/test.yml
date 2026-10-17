@@ -1,0 +1,57 @@
+# Reclaim CI: runs the Rust and UI test suites on Linux and Windows, plus a timed smoke scan of C:\ on Windows.
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      # The Tauri crate embeds the frontend, so it needs a dist/ folder to compile.
+      - name: Create placeholder dist
+        shell: bash
+        run: mkdir -p dist && echo "<html></html>" > dist/index.html
+
+      - name: Rust tests
+        run: cargo test --workspace
+
+      - name: UI tests
+        run: pnpm test
+
+      - name: Windows smoke scan of C:\
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $sw = [System.Diagnostics.Stopwatch]::StartNew()
+          cargo run --release -p reclaim-core --example scan_cli -- 'C:\'
+          $sw.Stop()
+          Write-Host ("Smoke scan finished in {0:n1}s (exit code {1})" -f $sw.Elapsed.TotalSeconds, $LASTEXITCODE)
+          exit $LASTEXITCODE

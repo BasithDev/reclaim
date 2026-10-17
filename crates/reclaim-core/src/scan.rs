@@ -64,6 +64,7 @@ pub struct ScanResult {
     nodes: Vec<Node>,
     /// Per category: arena indices of the largest files, biggest first.
     top: Vec<Vec<u32>>,
+    top_limit: usize,
 }
 
 fn mtime_secs(meta: &fs::Metadata) -> u32 {
@@ -182,7 +183,7 @@ impl ScanResult {
             None => self.top.iter().flatten().copied().collect(),
         };
         idxs.sort_unstable_by(|a, b| self.nodes[*b as usize].size.cmp(&self.nodes[*a as usize].size));
-        idxs.truncate(limit);
+        idxs.truncate(limit.min(self.top_limit));
         idxs.into_iter()
             .map(|i| {
                 let n = &self.nodes[i as usize];
@@ -547,7 +548,7 @@ pub fn scan(
         type_breakdown,
         snapshot_id: None,
     };
-    Ok(ScanResult { summary, nodes, top })
+    Ok(ScanResult { summary, nodes, top, top_limit: options.top_files_limit })
 }
 
 /// Maps a file extension (lowercase, without dot) to a category.

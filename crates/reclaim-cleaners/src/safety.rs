@@ -488,3 +488,73 @@ fn run_elevated_powershell(script: &str, timeout: Duration) -> Result<String> {
     }
     check("powershell (elevated)", &[], out)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn win(path: &str) -> bool {
+        let c: Vec<String> = path.split('\\').filter(|p| !p.is_empty() && !p.ends_with(':')).map(|p| p.to_lowercase()).collect();
+        c.len() <= 1 || windows_rules(&c)
+    }
+
+    #[test]
+    fn windows_rules_block_os_dirs() {
+        for p in [
+            r"C:\Windows",
+            r"C:\Windows\System32",
+            r"C:\Windows\System32\config",
+            r"C:\Windows\Temp",
+            r"C:\Windows\SoftwareDistribution",
+            r"C:\Program Files",
+            r"C:\Program Files\App\x.dll",
+            r"C:\Program Files (x86)\App",
+            r"C:\ProgramData",
+            r"C:\ProgramData\Microsoft\x",
+            r"C:\Users",
+            r"C:\Users\bob",
+            r"C:\Users\bob\Documents",
+            r"C:\Users\bob\AppData",
+            r"C:\Users\bob\AppData\Local",
+            r"C:\Users\bob\AppData\Roaming",
+            r"C:\Users\Public",
+            r"C:\$Recycle.Bin\S-1\x",
+            r"C:\System Volume Information\x",
+            r"C:\Temp",
+            r"C:",
+        ] {
+            assert!(win(p), "should be protected: {p}");
+        }
+    }
+
+    #[test]
+    fn windows_rules_allow_known_caches() {
+        for p in [
+            r"C:\Windows\Temp\a.tmp",
+            r"C:\WINDOWS\TEMP\a.tmp",
+            r"C:\Windows\SoftwareDistribution\Download\x",
+            r"C:\Windows\Minidump\a.dmp",
+            r"C:\Windows\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache\x",
+            r"C:\Users\bob\AppData\Local\Temp\x",
+            r"C:\Users\bob\AppData\Local\CrashDumps\a.dmp",
+            r"C:\Users\bob\Downloads\old.zip",
+            r"C:\ProgramData\NVIDIA Corporation\NV_Cache\x",
+        ] {
+            assert!(!win(p), "should be allowed: {p}");
+        }
+    }
+
+    #[test]
+    fn base64_matches_known_vectors() {
+        assert_eq!(base64(b""), "");
+        assert_eq!(base64(b"f"), "Zg==");
+        assert_eq!(base64(b"fo"), "Zm8=");
+        assert_eq!(base64(b"foo"), "Zm9v");
+        assert_eq!(base64(b"foobar"), "Zm9vYmFy");
+    }
+
+    #[test]
+    fn ps_quote_doubles_single_quotes() {
+        assert_eq!(ps_quote("a'b"), "'a''b'");
+    }
+}

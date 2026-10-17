@@ -1031,6 +1031,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "filetime"
+version = "0.2.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c287a33c7f0a620c38e641e7f60827713987b3c0f26e8ddc9462cc69cf75759"
+dependencies = [
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2839,6 +2849,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
+ "tempfile",
  "uuid",
 ]
 
@@ -2847,9 +2858,12 @@ name = "reclaim-cleaners"
 version = "0.1.0"
 dependencies = [
  "dirs 5.0.1",
+ "filetime",
  "reclaim-core",
  "serde",
  "serde_json",
+ "serial_test",
+ "tempfile",
  "thiserror 2.0.21",
  "trash",
  "walkdir",
@@ -2860,11 +2874,13 @@ dependencies = [
 name = "reclaim-core"
 version = "0.1.0"
 dependencies = [
+ "filetime",
  "rayon",
  "rusqlite",
  "serde",
  "serde_json",
  "sysinfo",
+ "tempfile",
  "thiserror 2.0.21",
  "windows-sys 0.61.2",
 ]
@@ -3286,6 +3302,31 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "serial_test"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "699f4197115b8a7e7ff19c9a315a4bd6fffec26cc4626ef45ecaea389e081c6d"
+dependencies = [
+ "futures-executor",
+ "futures-util",
+ "log",
+ "once_cell",
+ "parking_lot",
+ "serial_test_derive",
+]
+
+[[package]]
+name = "serial_test_derive"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94e153fc76e1c6a068703d6d29c508a0b15c061c4b7e43da59cc097bc342673c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]

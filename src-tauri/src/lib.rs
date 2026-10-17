@@ -2,9 +2,9 @@
 //! Registers every command listed in docs/CONTRACT.md, holds app state
 //! (running/finished scans, snapshot store, settings) and emits scan events.
 
-mod commands;
-mod settings;
-mod state;
+pub mod commands;
+pub mod settings;
+pub mod state;
 
 use commands::{app, cleaners, history, scan};
 use tauri::Manager;

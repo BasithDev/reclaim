@@ -1,0 +1,206 @@
+{
+  "AppInfo": {
+    "arch": "x86_64",
+    "homeDir": "/home/basith",
+    "os": "linux",
+    "version": "0.1.0"
+  },
+  "CleanerInfo": {
+    "description": "d",
+    "group": "system",
+    "id": "x",
+    "method": "files",
+    "name": "X",
+    "requiresAdmin": false,
+    "risk": "safe"
+  },
+  "CleanupPreview": {
+    "cleanerId": "x",
+    "command": "c",
+    "itemCount": 1,
+    "items": [
+      {
+        "label": null,
+        "modifiedMs": null,
+        "path": "/a",
+        "sizeBytes": 1
+      }
+    ],
+    "totalBytes": 1
+  },
+  "CleanupResult": {
+    "cleanerId": "x",
+    "errors": [
+      "e"
+    ],
+    "freedBytes": 1,
+    "itemsRemoved": 1,
+    "success": true
+  },
+  "DeletedOpenFile": {
+    "path": "/a",
+    "pid": 1,
+    "processName": "p",
+    "sizeBytes": 1
+  },
+  "DiskInfo": {
+    "availableBytes": 6,
+    "fileSystem": "ext4",
+    "id": "d",
+    "isRemovable": false,
+    "isSystem": true,
+    "kind": "ssd",
+    "mountPoint": "/",
+    "name": "n",
+    "totalBytes": 10,
+    "usedBytes": 4
+  },
+  "FileEntry": {
+    "category": "document",
+    "extension": "txt",
+    "modifiedMs": 1,
+    "name": "a",
+    "path": "/a",
+    "sizeBytes": 1
+  },
+  "GrowthEntry": {
+    "afterBytes": 2,
+    "beforeBytes": 1,
+    "deltaBytes": 1,
+    "isNew": false,
+    "path": "/a"
+  },
+  "PreviewItem": {
+    "label": "l",
+    "modifiedMs": null,
+    "path": "/a",
+    "sizeBytes": 1
+  },
+  "ScanError": {
+    "cancelled": true,
+    "message": "m",
+    "scanId": "s"
+  },
+  "ScanOptions": {
+    "crossFilesystems": true,
+    "excludedPaths": [
+      "/x"
+    ],
+    "root": "/",
+    "topFilesLimit": 5
+  },
+  "ScanProgress": {
+    "bytesCounted": 1,
+    "currentPath": "/",
+    "dirsScanned": 1,
+    "elapsedMs": 1,
+    "errors": 0,
+    "filesScanned": 1,
+    "scanId": "s"
+  },
+  "ScanSummary": {
+    "apparentBytes": 1,
+    "dirCount": 1,
+    "durationMs": 1,
+    "errorCount": 0,
+    "fileCount": 1,
+    "finishedAtMs": 2,
+    "root": "/",
+    "scanId": "s",
+    "snapshotId": 3,
+    "startedAtMs": 1,
+    "totalBytes": 1,
+    "typeBreakdown": [
+      {
+        "bytes": 1,
+        "category": "video",
+        "count": 1
+      }
+    ]
+  },
+  "Settings": {
+    "confirmBeforeClean": true,
+    "crossFilesystems": false,
+    "defaultScanRoot": null,
+    "excludedPaths": [],
+    "permanentDelete": false,
+    "saveSnapshots": true,
+    "theme": "system"
+  },
+  "SnapshotMeta": {
+    "diskTotalBytes": 2,
+    "diskUsedBytes": 1,
+    "fileCount": 1,
+    "id": 1,
+    "root": "/",
+    "takenAtMs": 1,
+    "totalBytes": 1
+  },
+  "TreeNode": {
+    "apparentBytes": 2,
+    "children": [
+      {
+        "apparentBytes": 1,
+        "children": [],
+        "dirCount": 0,
+        "fileCount": 1,
+        "hiddenChildren": 0,
+        "isDir": false,
+        "modifiedMs": null,
+        "name": "a",
+        "otherBytes": 0,
+        "path": "/r/a",
+        "sizeBytes": 1
+      }
+    ],
+    "dirCount": 1,
+    "fileCount": 1,
+    "hiddenChildren": 3,
+    "isDir": true,
+    "modifiedMs": 1700000000000,
+    "name": "r",
+    "otherBytes": 9,
+    "path": "/r",
+    "sizeBytes": 2
+  },
+  "TypeStat": {
+    "bytes": 1,
+    "category": "video",
+    "count": 1
+  },
+  "enums": {
+    "CleanMethod": [
+      "files",
+      "command"
+    ],
+    "CleanerGroup": [
+      "system",
+      "developer",
+      "applications",
+      "user"
+    ],
+    "DiskKind": [
+      "ssd",
+      "hdd",
+      "unknown"
+    ],
+    "FileCategory": [
+      "video",
+      "audio",
+      "image",
+      "document",
+      "archive",
+      "diskImage",
+      "code",
+      "executable",
+      "database",
+      "log",
+      "other"
+    ],
+    "Risk": [
+      "safe",
+      "moderate",
+      "careful"
+    ]
+  }
+}
