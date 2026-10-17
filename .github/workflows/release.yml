@@ -1,0 +1,55 @@
+# Reclaim release: when a version tag (e.g. v0.1.0) is pushed, builds the Linux and Windows installers
+# and attaches them to a GitHub Release, so they can be downloaded from the repo's Releases page.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Reclaim ${{ github.ref_name }}"
+          releaseBody: |
+            **Linux (Ubuntu/Debian):** download the `.deb`, then run `sudo apt install ./Reclaim_*.deb`.
+            **Linux (other):** download the `.AppImage`, make it executable (`chmod +x`), and run it.
+            **Windows:** download the `-setup.exe` and run it. Windows SmartScreen will warn because the app is not signed: choose *More info → Run anyway*.
+          releaseDraft: false
+          prerelease: false
